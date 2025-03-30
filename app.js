@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const tokenSection = document.getElementById('token-section');
     const collectTokensBtn = document.getElementById('collect-tokens');
 
-    // Set up Telegram MainButton
+    // Set up Telegram MainButton for wallet connection
     tg.MainButton.setParams({
         text: 'CONNECT WALLET',
         color: '#39FF14',
@@ -34,40 +34,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Handle MainButton click
-    tg.MainButton.onClick(async () => {
-        try {
-            const wallets = await connector.getWallets();
-            const tonWallet = wallets.find(w => w.name === 'Wallet');
-            
-            if (tonWallet) {
-                const universalLink = connector.connect(tonWallet);
-                window.location.href = universalLink;
-            } else {
-                tg.showAlert('Telegram Wallet not found. Please install it first.');
+    tg.MainButton.onClick(() => {
+        // Open Telegram's native TON Wallet
+        tg.openTonWallet({
+            callback: (result) => {
+                if (result) {
+                    handleWalletConnected(result);
+                } else {
+                    tg.showAlert('Failed to connect wallet. Please try again.');
+                }
             }
-        } catch (error) {
-            console.error('Error connecting wallet:', error);
-            tg.showAlert('Failed to connect wallet. Please try again.');
-        }
+        });
     });
 
-    // Listen for wallet connection
-    connector.onStatusChange(async (wallet) => {
-        if (wallet) {
-            walletStatus.textContent = `Connected: ${wallet.account.address.slice(0, 6)}...${wallet.account.address.slice(-4)}`;
+    function handleWalletConnected(wallet) {
+        if (wallet && wallet.address) {
+            walletStatus.textContent = `Connected: ${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`;
             tokenSection.style.display = 'block';
             tg.MainButton.hide();
-            await checkWalletEligibility(wallet.account.address);
+            checkWalletEligibility(wallet.address);
         } else {
             walletStatus.textContent = 'Wallet not connected';
             tokenSection.style.display = 'none';
             tg.MainButton.show();
         }
-    });
+    }
 
     // Set up token distribution button
     collectTokensBtn.addEventListener('click', async () => {
-        const wallet = await connector.getWallet();
+        const wallet = tg.initDataUnsafe?.user?.wallet;
         if (!wallet) {
             tg.showAlert('Please connect your wallet first');
             return;
@@ -88,38 +83,36 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }]
             }, async (buttonId) => {
                 if (buttonId === 'confirm') {
-                    const transaction = {
-                        validUntil: Math.floor(Date.now() / 1000) + 600,
-                        messages: [
-                            {
-                                address: ALIENC_CONTRACT,
-                                amount: '20000000',
-                                payload: {
-                                    abi: 'jetton_master',
-                                    method: 'mint',
-                                    params: {
-                                        to: wallet.account.address,
-                                        amount: DISTRIBUTION_AMOUNT,
-                                        responseAddress: wallet.account.address
-                                    }
+                    try {
+                        // Send transaction using Telegram's native TON Wallet
+                        tg.sendTonTransaction({
+                            to_address: ALIENC_CONTRACT,
+                            amount: '20000000', // 0.02 TON for gas
+                            payload: {
+                                abi: 'jetton_master',
+                                method: 'mint',
+                                params: {
+                                    to: wallet.address,
+                                    amount: DISTRIBUTION_AMOUNT,
+                                    responseAddress: wallet.address
+                                }
+                            },
+                            callback: (result) => {
+                                if (result.success) {
+                                    collectTokensBtn.disabled = true;
+                                    collectTokensBtn.textContent = 'Tokens Sent!';
+                                    tg.showPopup({
+                                        title: 'Success!',
+                                        message: 'Distribution successful! Check your wallet in a few minutes.',
+                                        buttons: [{
+                                            type: 'ok'
+                                        }]
+                                    });
+                                } else {
+                                    tg.showAlert('Failed to send transaction. Please try again later.');
                                 }
                             }
-                        ]
-                    };
-
-                    try {
-                        const result = await connector.sendTransaction(transaction);
-                        if (result) {
-                            collectTokensBtn.disabled = true;
-                            collectTokensBtn.textContent = 'Tokens Sent!';
-                            tg.showPopup({
-                                title: 'Success!',
-                                message: 'Distribution successful! Check your wallet in a few minutes.',
-                                buttons: [{
-                                    type: 'ok'
-                                }]
-                            });
-                        }
+                        });
                     } catch (error) {
                         console.error('Error during token distribution:', error);
                         tg.showAlert('Failed to distribute tokens. Please try again later.');
