@@ -3,5 +3,6 @@
     "name": "ALIENC Token Distribution",
     "iconUrl": "https://wmbalex.github.io/telegram-mini-app/icon.png",
     "termsOfUseUrl": "https://wmbalex.github.io/telegram-mini-app/terms.html",
-    "privacyPolicyUrl": "https://wmbalex.github.io/telegram-mini-app/privacy.html"
+    "privacyPolicyUrl": "https://wmbalex.github.io/telegram-mini-app/privacy.html",
+    "manifestVersion": "0.1"
 } 
