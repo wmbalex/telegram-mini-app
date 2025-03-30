@@ -8,11 +8,6 @@ tg.enableClosingConfirmation();
 const ALIENC_CONTRACT = 'EQCU9rkENAx-JSnSqWEfojQXXfFv9a3BJhFSn8M4FqFiGeqg';
 const DISTRIBUTION_AMOUNT = 10000; // Amount in tokens
 
-// Initialize TON Connect
-const connector = new TONConnect.SDK({
-    manifestUrl: 'https://wmbalex.github.io/telegram-mini-app/tonconnect-manifest.json'
-});
-
 document.addEventListener('DOMContentLoaded', async () => {
     // Expand the app to full height
     tg.expand();
@@ -24,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const tokenSection = document.getElementById('token-section');
     const collectTokensBtn = document.getElementById('collect-tokens');
 
-    // Set up Telegram MainButton for wallet connection
+    // Set up Telegram MainButton
     tg.MainButton.setParams({
         text: 'CONNECT WALLET',
         color: '#39FF14',
@@ -33,26 +28,44 @@ document.addEventListener('DOMContentLoaded', async () => {
         is_visible: true
     });
 
-    // Handle MainButton click
-    tg.MainButton.onClick(() => {
-        // Open Telegram's native TON Wallet
-        tg.openTonWallet({
-            callback: (result) => {
-                if (result) {
-                    handleWalletConnected(result);
-                } else {
-                    tg.showAlert('Failed to connect wallet. Please try again.');
-                }
+    // Check if user has Wallet
+    if (tg.initDataUnsafe?.user?.id) {
+        console.log('User ID:', tg.initDataUnsafe.user.id);
+        
+        // Request wallet access
+        tg.MainButton.onClick(() => {
+            console.log('Requesting wallet access...');
+            if (window.Telegram?.WebApp?.TonConnect) {
+                window.Telegram.WebApp.TonConnect.connect({
+                    jsItems: [{
+                        name: 'ALIENC Token Distribution',
+                        description: 'Connect to receive ALIENC tokens'
+                    }],
+                    callback: (result) => {
+                        console.log('Wallet connection result:', result);
+                        if (result.result) {
+                            const address = result.ton_addr;
+                            handleWalletConnected(address);
+                        } else {
+                            tg.showAlert('Failed to connect wallet. Please try again.');
+                        }
+                    }
+                });
+            } else {
+                tg.showAlert('Please update Telegram to use this feature.');
             }
         });
-    });
+    } else {
+        tg.showAlert('Please open this app in Telegram.');
+    }
 
-    function handleWalletConnected(wallet) {
-        if (wallet && wallet.address) {
-            walletStatus.textContent = `Connected: ${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`;
+    function handleWalletConnected(address) {
+        if (address) {
+            console.log('Wallet connected:', address);
+            walletStatus.textContent = `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
             tokenSection.style.display = 'block';
             tg.MainButton.hide();
-            checkWalletEligibility(wallet.address);
+            checkWalletEligibility(address);
         } else {
             walletStatus.textContent = 'Wallet not connected';
             tokenSection.style.display = 'none';
@@ -62,11 +75,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Set up token distribution button
     collectTokensBtn.addEventListener('click', async () => {
-        const wallet = tg.initDataUnsafe?.user?.wallet;
-        if (!wallet) {
+        if (!window.Telegram?.WebApp?.TonConnect?.currentAccount) {
             tg.showAlert('Please connect your wallet first');
             return;
         }
+
+        const address = window.Telegram.WebApp.TonConnect.currentAccount;
 
         try {
             tg.showPopup({
@@ -84,21 +98,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             }, async (buttonId) => {
                 if (buttonId === 'confirm') {
                     try {
-                        // Send transaction using Telegram's native TON Wallet
-                        tg.sendTonTransaction({
-                            to_address: ALIENC_CONTRACT,
-                            amount: '20000000', // 0.02 TON for gas
-                            payload: {
-                                abi: 'jetton_master',
-                                method: 'mint',
-                                params: {
-                                    to: wallet.address,
-                                    amount: DISTRIBUTION_AMOUNT,
-                                    responseAddress: wallet.address
+                        window.Telegram.WebApp.TonConnect.sendTransaction({
+                            validUntil: Math.floor(Date.now() / 1000) + 600,
+                            messages: [{
+                                address: ALIENC_CONTRACT,
+                                amount: '20000000', // 0.02 TON for gas
+                                payload: {
+                                    abi: 'jetton_master',
+                                    method: 'mint',
+                                    params: {
+                                        to: address,
+                                        amount: DISTRIBUTION_AMOUNT,
+                                        responseAddress: address
+                                    }
                                 }
-                            },
+                            }],
                             callback: (result) => {
-                                if (result.success) {
+                                console.log('Transaction result:', result);
+                                if (result.result) {
                                     collectTokensBtn.disabled = true;
                                     collectTokensBtn.textContent = 'Tokens Sent!';
                                     tg.showPopup({
@@ -128,9 +145,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function checkWalletEligibility(address) {
     try {
-        // Query the contract to check if the wallet has already received tokens
+        console.log('Checking eligibility for address:', address);
         const response = await fetch(`https://tonapi.io/v2/accounts/${ALIENC_CONTRACT}/jettons/${address}`);
         const data = await response.json();
+        console.log('Eligibility data:', data);
         
         const collectTokensBtn = document.getElementById('collect-tokens');
         if (data && data.balance && data.balance > 0) {
