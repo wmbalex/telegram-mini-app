@@ -1,0 +1,15 @@
+{
+  "name": "telegram-mini-app",
+  "version": "1.0.0",
+  "description": "A Telegram Mini App",
+  "main": "index.js",
+  "scripts": {
+    "start": "http-server . -p 3000 --cors"
+  },
+  "dependencies": {
+    "@twa-dev/sdk": "^6.9.1"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+} 
