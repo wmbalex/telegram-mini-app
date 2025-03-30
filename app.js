@@ -1,151 +1,143 @@
-// Initialize Telegram Web App
-const tg = window.Telegram.WebApp;
+// Initialize TWA SDK
+const WebApp = window.Telegram.WebApp;
+const TWA = window.TWA;
 
-// Enable closing confirmation dialog
-tg.enableClosingConfirmation();
+// Enable closing confirmation
+WebApp.enableClosingConfirmation();
 
 // ALIENC Token Contract
 const ALIENC_CONTRACT = 'EQCU9rkENAx-JSnSqWEfojQXXfFv9a3BJhFSn8M4FqFiGeqg';
-const DISTRIBUTION_AMOUNT = 10000; // Amount in tokens
+const DISTRIBUTION_AMOUNT = 10000;
+
+// Initialize TON Connect UI
+const tonConnectUI = new TONConnect.UI({
+    manifestUrl: 'https://wmbalex.github.io/telegram-mini-app/tonconnect-manifest.json',
+    buttonRootId: 'wallet-status',
+    uiPreferences: { 
+        theme: WebApp.colorScheme
+    }
+});
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Expand the app to full height
-    tg.expand();
-    
-    // Set up Telegram theme
-    document.documentElement.classList.add(`theme-${tg.colorScheme}`);
-    
-    const walletStatus = document.getElementById('wallet-status');
-    const tokenSection = document.getElementById('token-section');
-    const collectTokensBtn = document.getElementById('collect-tokens');
+    try {
+        // Verify we're in Telegram
+        if (!TWA.isInTelegram) {
+            throw new Error('Please open this app in Telegram');
+        }
 
-    // Set up Telegram MainButton
-    tg.MainButton.setParams({
-        text: 'CONNECT WALLET',
-        color: '#39FF14',
-        text_color: '#000000',
-        is_active: true,
-        is_visible: true
-    });
+        // Initialize UI elements
+        const walletStatus = document.getElementById('wallet-status');
+        const tokenSection = document.getElementById('token-section');
+        const collectTokensBtn = document.getElementById('collect-tokens');
 
-    // Check if user has Wallet
-    if (tg.initDataUnsafe?.user?.id) {
-        console.log('User ID:', tg.initDataUnsafe.user.id);
-        
-        // Request wallet access
-        tg.MainButton.onClick(() => {
-            console.log('Requesting wallet access...');
-            if (window.Telegram?.WebApp?.TonConnect) {
-                window.Telegram.WebApp.TonConnect.connect({
-                    jsItems: [{
-                        name: 'ALIENC Token Distribution',
-                        description: 'Connect to receive ALIENC tokens'
-                    }],
-                    callback: (result) => {
-                        console.log('Wallet connection result:', result);
-                        if (result.result) {
-                            const address = result.ton_addr;
-                            handleWalletConnected(address);
-                        } else {
-                            tg.showAlert('Failed to connect wallet. Please try again.');
+        // Set up Telegram MainButton
+        WebApp.MainButton.setParams({
+            text: 'CONNECT WALLET',
+            color: '#39FF14',
+            textColor: '#000000',
+            isVisible: true,
+            isActive: true
+        });
+
+        // Handle wallet connection
+        WebApp.MainButton.onClick(async () => {
+            try {
+                await tonConnectUI.connectWallet();
+            } catch (error) {
+                console.error('Connection error:', error);
+                WebApp.showAlert('Failed to connect wallet. Please try again.');
+            }
+        });
+
+        // Listen for wallet connection changes
+        tonConnectUI.onStatusChange(async (wallet) => {
+            console.log('Wallet status changed:', wallet);
+            
+            if (wallet) {
+                const address = wallet.account.address;
+                console.log('Connected wallet address:', address);
+                
+                walletStatus.textContent = `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
+                tokenSection.style.display = 'block';
+                WebApp.MainButton.hide();
+                
+                await checkWalletEligibility(address);
+            } else {
+                walletStatus.textContent = 'Wallet not connected';
+                tokenSection.style.display = 'none';
+                WebApp.MainButton.show();
+            }
+        });
+
+        // Handle token distribution
+        collectTokensBtn.addEventListener('click', async () => {
+            const wallet = await tonConnectUI.getWallet();
+            if (!wallet) {
+                WebApp.showAlert('Please connect your wallet first');
+                return;
+            }
+
+            try {
+                WebApp.showPopup({
+                    title: 'Confirm Distribution',
+                    message: `You will receive ${DISTRIBUTION_AMOUNT} ALIENC tokens. Continue?`,
+                    buttons: [
+                        { id: 'confirm', type: 'ok', text: 'Confirm' },
+                        { id: 'cancel', type: 'cancel', text: 'Cancel' }
+                    ]
+                }, async (buttonId) => {
+                    if (buttonId === 'confirm') {
+                        try {
+                            const transaction = {
+                                validUntil: Math.floor(Date.now() / 1000) + 600,
+                                messages: [{
+                                    address: ALIENC_CONTRACT,
+                                    amount: '20000000', // 0.02 TON for gas
+                                    payload: {
+                                        abi: 'jetton_master',
+                                        method: 'mint',
+                                        params: {
+                                            to: wallet.account.address,
+                                            amount: DISTRIBUTION_AMOUNT,
+                                            responseAddress: wallet.account.address
+                                        }
+                                    }
+                                }]
+                            };
+
+                            const result = await tonConnectUI.sendTransaction(transaction);
+                            console.log('Transaction result:', result);
+
+                            if (result) {
+                                collectTokensBtn.disabled = true;
+                                collectTokensBtn.textContent = 'Tokens Sent!';
+                                WebApp.showPopup({
+                                    title: 'Success!',
+                                    message: 'Distribution successful! Check your wallet in a few minutes.',
+                                    buttons: [{ type: 'ok' }]
+                                });
+                            }
+                        } catch (error) {
+                            console.error('Transaction error:', error);
+                            WebApp.showAlert('Failed to distribute tokens. Please try again later.');
                         }
                     }
                 });
-            } else {
-                tg.showAlert('Please update Telegram to use this feature.');
+            } catch (error) {
+                console.error('Popup error:', error);
+                WebApp.showAlert('Failed to show confirmation. Please try again.');
             }
         });
-    } else {
-        tg.showAlert('Please open this app in Telegram.');
+
+    } catch (error) {
+        console.error('Initialization error:', error);
+        WebApp.showAlert(error.message);
     }
-
-    function handleWalletConnected(address) {
-        if (address) {
-            console.log('Wallet connected:', address);
-            walletStatus.textContent = `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
-            tokenSection.style.display = 'block';
-            tg.MainButton.hide();
-            checkWalletEligibility(address);
-        } else {
-            walletStatus.textContent = 'Wallet not connected';
-            tokenSection.style.display = 'none';
-            tg.MainButton.show();
-        }
-    }
-
-    // Set up token distribution button
-    collectTokensBtn.addEventListener('click', async () => {
-        if (!window.Telegram?.WebApp?.TonConnect?.currentAccount) {
-            tg.showAlert('Please connect your wallet first');
-            return;
-        }
-
-        const address = window.Telegram.WebApp.TonConnect.currentAccount;
-
-        try {
-            tg.showPopup({
-                title: 'Confirm Distribution',
-                message: `You will receive ${DISTRIBUTION_AMOUNT} ALIENC tokens. Continue?`,
-                buttons: [{
-                    id: 'confirm',
-                    type: 'ok',
-                    text: 'Confirm'
-                }, {
-                    id: 'cancel',
-                    type: 'cancel',
-                    text: 'Cancel'
-                }]
-            }, async (buttonId) => {
-                if (buttonId === 'confirm') {
-                    try {
-                        window.Telegram.WebApp.TonConnect.sendTransaction({
-                            validUntil: Math.floor(Date.now() / 1000) + 600,
-                            messages: [{
-                                address: ALIENC_CONTRACT,
-                                amount: '20000000', // 0.02 TON for gas
-                                payload: {
-                                    abi: 'jetton_master',
-                                    method: 'mint',
-                                    params: {
-                                        to: address,
-                                        amount: DISTRIBUTION_AMOUNT,
-                                        responseAddress: address
-                                    }
-                                }
-                            }],
-                            callback: (result) => {
-                                console.log('Transaction result:', result);
-                                if (result.result) {
-                                    collectTokensBtn.disabled = true;
-                                    collectTokensBtn.textContent = 'Tokens Sent!';
-                                    tg.showPopup({
-                                        title: 'Success!',
-                                        message: 'Distribution successful! Check your wallet in a few minutes.',
-                                        buttons: [{
-                                            type: 'ok'
-                                        }]
-                                    });
-                                } else {
-                                    tg.showAlert('Failed to send transaction. Please try again later.');
-                                }
-                            }
-                        });
-                    } catch (error) {
-                        console.error('Error during token distribution:', error);
-                        tg.showAlert('Failed to distribute tokens. Please try again later.');
-                    }
-                }
-            });
-        } catch (error) {
-            console.error('Error showing confirmation:', error);
-            tg.showAlert('Failed to show confirmation. Please try again.');
-        }
-    });
 });
 
 async function checkWalletEligibility(address) {
     try {
-        console.log('Checking eligibility for address:', address);
+        console.log('Checking eligibility for:', address);
         const response = await fetch(`https://tonapi.io/v2/accounts/${ALIENC_CONTRACT}/jettons/${address}`);
         const data = await response.json();
         console.log('Eligibility data:', data);
@@ -157,6 +149,6 @@ async function checkWalletEligibility(address) {
             document.querySelector('.info-text').textContent = 'You have already received ALIENC tokens.';
         }
     } catch (error) {
-        console.error('Error checking eligibility:', error);
+        console.error('Eligibility check error:', error);
     }
 } 
