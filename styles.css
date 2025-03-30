@@ -5,19 +5,21 @@
 }
 
 :root {
-    --toxic-green: #39FF14;
-    --toxic-green-dark: #2db30f;
-    --toxic-green-glow: rgba(57, 255, 20, 0.3);
+    --glow-color: #39FF14;
+    --glow-spread-color: rgba(57, 255, 20, 0.4);
+    --enhanced-glow-color: rgba(57, 255, 20, 0.8);
 }
 
 body {
-    font-family: 'Orbitron', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: #000000;
-    color: var(--toxic-green);
-    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: #000;
+    color: var(--glow-color);
+    font-family: 'Orbitron', sans-serif;
     min-height: 100vh;
-    position: relative;
-    overflow-x: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 body::before {
@@ -33,114 +35,87 @@ body::before {
 }
 
 .container {
-    max-width: 800px;
-    margin: 0 auto;
+    width: 100%;
+    max-width: 600px;
     padding: 20px;
-    position: relative;
+    text-align: center;
+}
+
+.alien-icon {
+    font-size: 48px;
+    margin-bottom: 20px;
+}
+
+.glow-text {
+    color: var(--glow-color);
+    text-shadow: 0 0 7px var(--glow-color),
+                 0 0 10px var(--glow-color),
+                 0 0 21px var(--glow-color),
+                 0 0 42px var(--glow-spread-color),
+                 0 0 82px var(--glow-spread-color),
+                 0 0 92px var(--glow-spread-color),
+                 0 0 102px var(--glow-spread-color),
+                 0 0 151px var(--glow-spread-color);
 }
 
 h1 {
-    text-align: center;
-    margin-bottom: 30px;
-    color: var(--toxic-green);
-    font-size: 2.5em;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    text-shadow: 0 0 10px var(--toxic-green-glow);
-    animation: glow 2s ease-in-out infinite alternate;
-}
-
-h2 {
-    text-align: center;
+    font-size: 48px;
     margin: 20px 0;
-    color: var(--toxic-green);
-    font-size: 1.8em;
     text-transform: uppercase;
-    letter-spacing: 1px;
 }
 
-#wallet-section, #token-section {
-    background-color: rgba(0, 0, 0, 0.8);
-    padding: 25px;
+.status-box {
+    border: 0.2rem solid var(--glow-color);
     border-radius: 15px;
+    padding: 20px;
     margin: 20px 0;
-    border: 2px solid var(--toxic-green);
-    box-shadow: 0 0 20px var(--toxic-green-glow);
-    backdrop-filter: blur(10px);
-    text-align: center;
+    box-shadow: 0 0 .2rem var(--glow-color),
+                0 0 .2rem var(--glow-color),
+                0 0 2rem var(--glow-spread-color),
+                0 0 0.8rem var(--glow-spread-color),
+                0 0 2.8rem var(--glow-spread-color),
+                inset 0 0 1.3rem var(--glow-spread-color);
+}
+
+.token-info {
+    margin: 20px 0;
 }
 
 .glow-button {
-    background-color: transparent;
-    color: var(--toxic-green);
-    border: 2px solid var(--toxic-green);
-    padding: 12px 24px;
-    font-size: 1.2em;
-    border-radius: 8px;
-    cursor: pointer;
     font-family: 'Orbitron', sans-serif;
+    font-size: 18px;
+    color: var(--glow-color);
+    background-color: transparent;
+    border: 0.2rem solid var(--glow-color);
+    border-radius: 10px;
+    padding: 15px 30px;
+    margin: 20px 0;
+    cursor: pointer;
     text-transform: uppercase;
-    letter-spacing: 1px;
     transition: all 0.3s ease;
-    margin: 10px 0;
-    box-shadow: 0 0 10px var(--toxic-green-glow);
+    box-shadow: 0 0 .2rem var(--glow-color),
+                0 0 .2rem var(--glow-color),
+                0 0 2rem var(--glow-spread-color),
+                0 0 0.8rem var(--glow-spread-color),
+                0 0 2.8rem var(--glow-spread-color),
+                inset 0 0 1.3rem var(--glow-spread-color);
 }
 
 .glow-button:hover {
-    background-color: var(--toxic-green);
-    color: #000000;
-    box-shadow: 0 0 20px var(--toxic-green);
+    color: rgba(0, 0, 0, 0.8);
+    background-color: var(--glow-color);
+    box-shadow: 0 0 1rem var(--glow-color);
 }
 
 .glow-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    background-color: rgba(57, 255, 20, 0.1);
-    box-shadow: none;
 }
 
-.glow-button:disabled:hover {
-    background-color: rgba(57, 255, 20, 0.1);
-    color: var(--toxic-green);
-    box-shadow: none;
-}
-
-.token-info {
+.info-text {
+    font-size: 16px;
     margin: 20px 0;
-    font-size: 1.2em;
-}
-
-#wallet-status {
-    margin: 10px 0;
-    font-size: 1.1em;
-}
-
-#user-info {
-    background-color: rgba(0, 0, 0, 0.8);
-    padding: 25px;
-    border-radius: 15px;
-    margin-top: 20px;
-    border: 2px solid var(--toxic-green);
-    box-shadow: 0 0 20px var(--toxic-green-glow);
-    backdrop-filter: blur(10px);
-}
-
-#user-info p {
-    margin: 10px 0;
-    font-size: 1.1em;
-    color: var(--toxic-green);
-    text-shadow: 0 0 5px var(--toxic-green-glow);
-}
-
-@keyframes glow {
-    from {
-        text-shadow: 0 0 10px var(--toxic-green-glow);
-    }
-    to {
-        text-shadow: 0 0 20px var(--toxic-green-glow),
-                     0 0 30px var(--toxic-green-glow),
-                     0 0 40px var(--toxic-green-glow);
-    }
+    opacity: 0.8;
 }
 
 /* Add some alien-themed decorative elements */
@@ -170,12 +145,4 @@ h2 {
     50% {
         transform: translateY(-10px);
     }
-}
-
-.info-text {
-    font-size: 0.9em;
-    color: var(--toxic-green);
-    opacity: 0.8;
-    margin-top: 15px;
-    font-style: italic;
 } 

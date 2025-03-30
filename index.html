@@ -15,22 +15,19 @@
 </head>
 <body>
     <div class="container">
-        <div class="logo">
-            <img src="alien.png" alt="ALIENC Logo" class="alien-logo">
-            <h1>ALIENC</h1>
-        </div>
+        <div class="alien-icon">👽</div>
+        <h1 class="glow-text">ALIENC</h1>
         
-        <div id="wallet-section">
-            <div id="tonconnect-button"></div>
-            <p id="wallet-status" class="status-text">Wallet not connected</p>
+        <div class="status-box">
+            <p id="wallet-status" class="glow-text">Wallet not connected</p>
         </div>
 
         <div id="token-section" style="display: none;">
             <div class="token-info">
-                <p class="distribution-amount">Distribution Amount: <span id="available-tokens">10,000 ALIENC</span></p>
+                <p class="distribution-amount glow-text">Distribution Amount: <span id="available-tokens">10,000 ALIENC</span></p>
                 <button id="collect-tokens" class="glow-button">Claim Tokens</button>
             </div>
-            <p class="info-text">Connect your wallet to receive your ALIENC tokens. One-time distribution per wallet.</p>
+            <p class="info-text glow-text">Connect your wallet to receive your ALIENC tokens.</p>
         </div>
     </div>
     <script src="app.js"></script>

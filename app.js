@@ -8,28 +8,9 @@ tg.enableClosingConfirmation();
 const ALIENC_CONTRACT = 'EQCU9rkENAx-JSnSqWEfojQXXfFv9a3BJhFSn8M4FqFiGeqg';
 const DISTRIBUTION_AMOUNT = 10000; // Amount in tokens
 
-// Initialize TON Connect UI with Telegram-specific configuration
-const tonConnectUI = new TONConnect.UI({
-    manifestUrl: 'https://wmbalex.github.io/telegram-mini-app/tonconnect-manifest.json',
-    buttonRootId: 'tonconnect-button',
-    uiPreferences: { 
-        theme: tg.colorScheme === 'dark' ? 'DARK' : 'LIGHT'  // Use Telegram's theme
-    },
-    walletsListConfiguration: {
-        includeWallets: [
-            {
-                name: 'Wallet',
-                imageUrl: 'https://wallet.tg/images/logo-288.png',
-                aboutUrl: 'https://wallet.tg/',
-                universalLink: 'https://t.me/wallet/start',
-                bridgeUrl: 'https://bridge.tonapi.io/bridge',
-                platforms: ['ios', 'android', 'macos', 'windows', 'linux']
-            }
-        ]
-    },
-    actionsConfiguration: {
-        twaReturnUrl: window.location.href // Return URL for Telegram Web App
-    }
+// Initialize TON Connect
+const connector = new TONConnect.SDK({
+    manifestUrl: 'https://wmbalex.github.io/telegram-mini-app/tonconnect-manifest.json'
 });
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -43,17 +24,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     const tokenSection = document.getElementById('token-section');
     const collectTokensBtn = document.getElementById('collect-tokens');
 
-    // Create Telegram Main Button
+    // Set up Telegram MainButton
     tg.MainButton.setParams({
         text: 'CONNECT WALLET',
-        color: '#2ECC71',
-        text_color: '#FFFFFF',
+        color: '#39FF14',
+        text_color: '#000000',
         is_active: true,
         is_visible: true
     });
 
+    // Handle MainButton click
+    tg.MainButton.onClick(async () => {
+        try {
+            const wallets = await connector.getWallets();
+            const tonWallet = wallets.find(w => w.name === 'Wallet');
+            
+            if (tonWallet) {
+                const universalLink = connector.connect(tonWallet);
+                window.location.href = universalLink;
+            } else {
+                tg.showAlert('Telegram Wallet not found. Please install it first.');
+            }
+        } catch (error) {
+            console.error('Error connecting wallet:', error);
+            tg.showAlert('Failed to connect wallet. Please try again.');
+        }
+    });
+
     // Listen for wallet connection
-    tonConnectUI.onStatusChange(async (wallet) => {
+    connector.onStatusChange(async (wallet) => {
         if (wallet) {
             walletStatus.textContent = `Connected: ${wallet.account.address.slice(0, 6)}...${wallet.account.address.slice(-4)}`;
             tokenSection.style.display = 'block';
@@ -66,19 +65,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Handle Telegram Main Button click
-    tg.MainButton.onClick(async () => {
-        try {
-            await tonConnectUI.connectWallet();
-        } catch (error) {
-            console.error('Error connecting wallet:', error);
-            tg.showAlert('Failed to connect wallet. Please try again.');
-        }
-    });
-
     // Set up token distribution button
     collectTokensBtn.addEventListener('click', async () => {
-        const wallet = await tonConnectUI.getWallet();
+        const wallet = await connector.getWallet();
         if (!wallet) {
             tg.showAlert('Please connect your wallet first');
             return;
@@ -119,7 +108,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     };
 
                     try {
-                        const result = await tonConnectUI.sendTransaction(transaction);
+                        const result = await connector.sendTransaction(transaction);
                         if (result) {
                             collectTokensBtn.disabled = true;
                             collectTokensBtn.textContent = 'Tokens Sent!';
