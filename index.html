@@ -3,22 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ALIENC Mini App</title>
-    <link rel="stylesheet" href="styles.css?v=2">
+    <title>ALIENC Token Distribution</title>
+    <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
     <meta http-equiv="Cache-Control" content="no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <meta http-equiv="Clear-Site-Data" content="*">
 </head>
 <body>
     <div class="container">
         <h1>ALIENC</h1>
+        <div id="wallet-section">
+            <button id="connect-wallet" class="glow-button">Connect Wallet</button>
+            <p id="wallet-status">Wallet not connected</p>
+        </div>
+        <div id="token-section" style="display: none;">
+            <h2>Receive ALIENC Tokens</h2>
+            <div class="token-info">
+                <p>Distribution Amount: <span id="available-tokens">10,000 ALIENC</span></p>
+                <button id="collect-tokens" class="glow-button">Claim Tokens</button>
+            </div>
+            <p class="info-text">Connect your wallet to receive your ALIENC tokens. One-time distribution per wallet.</p>
+        </div>
         <div id="user-info">
-            <p>Loading alien information...</p>
+            <p>👽 Connect your wallet to receive ALIENC tokens...</p>
         </div>
     </div>
-    <script src="app.js?v=2"></script>
+    <script src="app.js"></script>
 </body>
 </html> 
