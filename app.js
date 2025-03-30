@@ -15,14 +15,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (user) {
         userInfo.innerHTML = `
-            <p>User ID: ${user.id}</p>
-            <p>First Name: ${user.first_name}</p>
-            ${user.last_name ? `<p>Last Name: ${user.last_name}</p>` : ''}
-            ${user.username ? `<p>Username: ${user.username}</p>` : ''}
-            ${user.language_code ? `<p>Language: ${user.language_code}</p>` : ''}
-            ${user.start_param ? `<p>Start Parameter: ${user.start_param}</p>` : ''}
+            <p>👽 Alien ID: ${user.id}</p>
+            <p>🛸 First Name: ${user.first_name}</p>
+            ${user.last_name ? `<p>🌌 Last Name: ${user.last_name}</p>` : ''}
+            ${user.username ? `<p>🚀 Username: ${user.username}</p>` : ''}
+            ${user.language_code ? `<p>🌍 Language: ${user.language_code}</p>` : ''}
+            ${user.start_param ? `<p>✨ Start Parameter: ${user.start_param}</p>` : ''}
         `;
     } else {
-        userInfo.innerHTML = '<p>No user information available</p>';
+        userInfo.innerHTML = '<p>👽 No alien information available</p>';
     }
 }); 
