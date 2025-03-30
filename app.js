@@ -1,6 +1,5 @@
-// Initialize TWA SDK
+// Initialize Telegram Web App
 const WebApp = window.Telegram.WebApp;
-const TWA = window.TWA;
 
 // Enable closing confirmation
 WebApp.enableClosingConfirmation();
@@ -10,7 +9,7 @@ const ALIENC_CONTRACT = 'EQCU9rkENAx-JSnSqWEfojQXXfFv9a3BJhFSn8M4FqFiGeqg';
 const DISTRIBUTION_AMOUNT = 10000;
 
 // Initialize TON Connect UI
-const tonConnectUI = new TONConnect.UI({
+const tonConnectUI = new TonConnectUI({
     manifestUrl: 'https://wmbalex.github.io/telegram-mini-app/tonconnect-manifest.json',
     buttonRootId: 'wallet-status',
     uiPreferences: { 
@@ -20,11 +19,6 @@ const tonConnectUI = new TONConnect.UI({
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        // Verify we're in Telegram
-        if (!TWA.isInTelegram) {
-            throw new Error('Please open this app in Telegram');
-        }
-
         // Initialize UI elements
         const walletStatus = document.getElementById('wallet-status');
         const tokenSection = document.getElementById('token-section');
